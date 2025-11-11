@@ -7,7 +7,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-# from streamlit_extras.row import row  # <--- CHANGED (1/7): This line is deleted
+# from streamlit_extras.row import row : This line is deleted
 from streamlit_extras.stylable_container import stylable_container
 from streamlit_extras.avatar import avatar
 
@@ -56,15 +56,6 @@ def load_all_data():
     except KeyError as e:
         st.error(f"Data mapping error: Column {e} not found in the CSV. Please check your column names.")
         return None
-    
-# =========================================================
-# 2. DATA TRANSFORMATION FUNCTION (THE "BRIDGE")
-# =========================================================
-
-
-
-
-
 # =========================================================
 # 2. DATA TRANSFORMATION FUNCTION (THE "BRIDGE")
 # =========================================================
@@ -74,7 +65,6 @@ def build_patient_data(patient_id, df):
     Finds data for the selected patient in the DataFrame
     and builds the dictionary that dashboard_app expects.
     """
-    
     # --- 1. GET PATIENT ROW ---
     try:
         patient_row = df[df["PatID"] == patient_id].to_dict('records')[0]
@@ -180,7 +170,6 @@ def build_patient_data(patient_id, df):
     # --- 5. BUILD FINAL DICTIONARY ---
     
     # --- CHANGED: Create real scatter data ---
-    # Get the relevant columns for *all* patients and drop any with missing data
     scatter_df = df[['PatID', 'SurgWtKg', 'Shunt Size']].dropna()
     
     data_dict = {
@@ -227,9 +216,6 @@ def build_patient_data(patient_id, df):
     }
     
     return data_dict
-
-
-
 
 
 # =========================
