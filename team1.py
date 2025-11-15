@@ -109,7 +109,7 @@ def build_patient_data(patient_id, df):
     if get_patient_value(patient_row, "MechCircSupp", 0) == 1:
         details = (f"**Type:** {get_patient_value(patient_row, 'MechCircSuppType', 'N/A')}\n\n"
                    f"**Reason:** {get_patient_value(patient_row, 'MechCircSuppReason', 'N/A')}\n\n"
-                   f"**Date:** {get_patient_value(patient_row, 'MechCircSuppInitDtTm', 'N/A')}")
+                   f"**Date/Time:** {get_patient_value(patient_row, 'MechCircSuppInitDtTm', 'N/A')}")
         complications_list.append({"title": "Mechanical Support", "subtext": "Mechanical circulatory support was required.", "risk": "High", "details": details})
     
     if get_patient_value(patient_row, "CompLCOS2", 0) == 1:
