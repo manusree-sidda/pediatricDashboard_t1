@@ -504,7 +504,6 @@ def dashboard_app(data: dict):
                 proc_data = data["procedure_details"]
                 
                 # --- Procedure Type ---
-                # --- Procedure Type ---
                 st.markdown(f"""
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 12px;">
                     <div style="display:flex; align-items:flex-start; gap: 8px;">
@@ -515,6 +514,7 @@ def dashboard_app(data: dict):
                         </div>
                     </div>
                 </div>
+                <br>
                 """, unsafe_allow_html=True)
                 
                 # --- Cardiac Anatomy ---
@@ -526,6 +526,7 @@ def dashboard_app(data: dict):
                         <div style="font-weight: 600; font-size: 1.1rem; color: #111;">{proc_data['anatomy_notes']}</div>
                     </div>
                 </div>
+                <br>
                 """, unsafe_allow_html=True)
 
         # --- End: Custom Card ---
