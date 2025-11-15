@@ -60,11 +60,16 @@ def load_all_data():
 # 2. DATA TRANSFORMATION FUNCTION (THE "BRIDGE")
 # =========================================================
 
+# =========================================================
+# 2. DATA TRANSFORMATION FUNCTION (THE "BRIDGE")
+# =========================================================
+
 def build_patient_data(patient_id, df):
     """
     Finds data for the selected patient in the DataFrame
     and builds the dictionary that dashboard_app expects.
     """
+    
     # --- 1. GET PATIENT ROW ---
     try:
         patient_row = df[df["PatID"] == patient_id].to_dict('records')[0]
@@ -95,7 +100,6 @@ def build_patient_data(patient_id, df):
     
     complications_list = []
     comorbidities_list = []
-    other_list = []
 
     # --- Complications ---
     if get_patient_value(patient_row, "CompCardArrest", 0) == 1:
@@ -162,14 +166,9 @@ def build_patient_data(patient_id, df):
         details = f"**Abnormality:** {get_patient_value(patient_row, 'ChromAbTerm', 'N/A')}"
         comorbidities_list.append({"title": "Chromosomal Abnormality", "subtext": "Chromosomal abnormality present.", "risk": "Medium", "details": details})
 
-    # --- Other ---
-    if get_patient_value(patient_row, "Fetal_Drug_Exposure_label", "No") == "Yes":
-        details = "Patient noted as having fetal drug exposure."
-        other_list.append({"title": "Fetal Drug Exposure", "subtext": "Patient had fetal drug exposure.", "risk": "Medium", "details": details})
 
     # --- 5. BUILD FINAL DICTIONARY ---
     
-    # --- CHANGED: Create real scatter data ---
     scatter_df = df[['PatID', 'SurgWtKg', 'Shunt Size']].dropna()
     
     data_dict = {
@@ -194,6 +193,13 @@ def build_patient_data(patient_id, df):
             "cross_clamp_time": get_patient_value(patient_row, "XClampTm", 0),
         },
         
+        # --- NEW: Added procedure/anatomy details ---
+        "procedure_details": {
+            "procedure_name": get_patient_value(patient_row, "ProcName34", "N/A"),
+            "anatomy_notes": get_patient_value(patient_row, "Cardiac Anatomy Notes", "N/A"),
+            "stage": "Stage I" # Placeholder, see note below
+        },
+        
         "risk_breakdown": [
             ("Age", 20),
             ("Surgical Complexity", 35),
@@ -204,19 +210,16 @@ def build_patient_data(patient_id, df):
         
         "notifs_complications": complications_list,
         "notifs_comorbidities": comorbidities_list,
-        "notifs_other": other_list,
         
-        # --- CHANGED: Use real data for the shunt scatter plot ---
         "shunt_scatter": {
             "patient_ids": scatter_df['PatID'].tolist(),
             "weight_kg": scatter_df['SurgWtKg'].tolist(),
             "shunt_mm":   scatter_df['Shunt Size'].tolist(),
-            "current_patient_id": patient_id, # Use the currently selected patient ID
+            "current_patient_id": patient_id, 
         },
     }
     
     return data_dict
-
 
 # =========================
 # THEME / COLOR UTILITIES
@@ -273,6 +276,26 @@ def get_icon(icon: str, text: str):
     svg = icons.get(icon, "")
     st.markdown(f"""<div style=\"display:flex;align-items:center;padding:6px 0;gap:10px;font-size:0.9rem;\">\n        <span>{svg}</span><span>{text}</span></div>""", unsafe_allow_html=True)
 
+
+
+def procedure_icon_markdown():
+    """Returns the SVG for the purple stethoscope icon."""
+    return """<div style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:8px;background-color:#f3e8ff;color:#9333ea;">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 14a1 1 0 0 1-2 0V9.5A2.5 2.5 0 0 1 4.5 7h0A2.5 2.5 0 0 1 7 9.5V14a1 1 0 0 1-2 0"/>
+        <path d="M17 14a1 1 0 0 1-2 0V9.5A2.5 2.5 0 0 1 17.5 7h0A2.5 2.5 0 0 1 20 9.5V14a1 1 0 0 1-2 0"/>
+        <path d="M7 14v-2.5a2.5 2.5 0 0 0-2.5-2.5h0A2.5 2.5 0 0 0 2 11.5V14"/>
+        <path d="M17 14v-2.5a2.5 2.5 0 0 0-2.5-2.5h0A2.5 2.5 0 0 0 12 11.5V14"/>
+        <path d="M12 14v-2.5a2.5 2.5 0 0 1 2.5-2.5h0A2.5 2.5 0 0 1 17 11.5V14"/>
+        <circle cx="12" cy="6" r="3"/>
+    </svg></div>"""
+
+def anatomy_icon_markdown():
+    """Returns the SVG for the red heart icon."""
+    return """<div style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:8px;background-color:#ffe4e6;color:#e11d48;">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+    </svg></div>"""
 
 def notification_text(text: str, risk: str):
     color = band_color(risk); bg = f"{color}26"
@@ -373,6 +396,8 @@ def dashboard_app(data: dict):
             with info2_col2: get_icon("user", f"Ethnicity: {patient['ethnicity']}")
             with info2_col3: get_icon("user", f"Sex: {patient['sex']}")
 
+            
+
             st.markdown("<div style='margin-top:18px;'></div>", unsafe_allow_html=True)
 
 # ---"Weight at Surgery" Card  ---
@@ -406,16 +431,14 @@ def dashboard_app(data: dict):
                                 <span style="font-size:1.1rem;font-weight:600;">{surg_weight} kg</span>
                                 </div>
                             <div style="text-align:right;color:#555;font-size:0.9rem;white-space:nowrap;">
-                                <span style="margin-right:20px;">Weight Gain: <b>{gain_kg} kg</b></span>
+                                <span style="margin-right:20px;">Weight Gain After Birth: <b>{gain_kg} kg</b></span>
                                 <span>Surgery: <b>{surg_date}</b></span>
                             </div>
                         </div>
+                        <br>
                     """, unsafe_allow_html=True)
 
-                # --- Bottom part of the card ---
-                st.markdown("<hr style='margin:10px 0;border-color:#e5e7eb;opacity:0.7;'>", unsafe_allow_html=True)
-                st.markdown(f"<span style='color:#555;font-size:0.9rem;'>Below healthy range</span>",
-                            unsafe_allow_html=True)
+ 
 
     # ---- Row: Notifications ----
     notif_col1, notif_col2, notif_col3 = st.columns(3, gap="medium")
@@ -466,8 +489,45 @@ def dashboard_app(data: dict):
         with st.container(border=True):
             render_notifications("Comorbidities",  data["notifs_comorbidities"], icon="check")
     with notif_col3:
+        # --- NEW: Custom Procedure/Anatomy Card ---
         with st.container(border=True):
-            render_notifications("Other",          data["notifs_other"],       icon="check")
+            with stylable_container(
+                key="procedure_card",
+                css_styles="""{
+                    background-color: #fbfaff;
+                    border: 1px solid #e9d5ff;
+                    border-radius: 12px;
+                    padding: 12px;
+                }"""
+            ):
+                proc_data = data["procedure_details"]
+                
+                # --- Procedure Type ---
+                # --- Procedure Type ---
+                st.markdown(f"""
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 12px;">
+                    <div style="display:flex; align-items:flex-start; gap: 8px;">
+                        {procedure_icon_markdown()}
+                        <div>
+                            <div style="color: #555; font-size: 0.9rem;">Procedure Type</div>
+                            <div style="font-weight: 600; font-size: 1.1rem; color: #111;">{proc_data['procedure_name']}</div>
+                        </div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                # --- Cardiac Anatomy ---
+                st.markdown(f"""
+                <div style="display:flex; align-items:flex-start; gap: 8px; margin-top: 12px;">
+                    {anatomy_icon_markdown()}
+                    <div>
+                        <div style="color: #555; font-size: 0.9rem;">Cardiac Anatomy</div>
+                        <div style="font-weight: 600; font-size: 1.1rem; color: #111;">{proc_data['anatomy_notes']}</div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+        # --- End: Custom Card ---
 
     # ---- Row: Procedure durations & Shunt analysis ----
     left_col, right_col = st.columns((.5, .5), gap="medium")
@@ -516,7 +576,7 @@ def dashboard_app(data: dict):
         st.markdown(f"""
             <div class="legend">
                 <div class="legend-item"><div class="legend-swatch" style="background:{RISK_COLORS['Low']['bg']};"></div>Low Risk</div>
-                <div classs="legend-item"><div class="legend-swatch" style="background:{RISK_COLORS['Medium']['bg']};"></div>Medium Risk</div>
+                <div class="legend-item"><div class="legend-swatch" style="background:{RISK_COLORS['Medium']['bg']};"></div>Medium Risk</div>
                 <div class="legend-item"><div class="legend-swatch" style="background:{RISK_COLORS['High']['bg']};"></div>High Risk</div>
             </div>""", unsafe_allow_html=True)
         
@@ -545,10 +605,14 @@ def dashboard_app(data: dict):
                         name=f"Current Patient ({current_id})", hovertext=me["patient_id"], hoverinfo="text+y")
         fig.add_scatter(x=xfit, y=yfit, mode="lines", name="Trendline")
         fig.update_layout(margin=dict(l=20, r=20, t=10, b=10),
-                          xaxis=dict(title="Patient ID", tickmode="array", tickvals=df["x"], ticktext=df["patient_id"]),
+                          xaxis=dict(title="Patients"),
                           yaxis=dict(title=y_label), height=300)
         fig.add_hrect(y0=y_data.min(), y1=y_data.max(), opacity=0.08, line_width=0)
         st.plotly_chart(fig, use_container_width=True, key=f"p2-shunt-{uuid.uuid4()}")
+
+
+    # --- ADD THIS LINE FOR SPACING ---
+    st.markdown('<br>', unsafe_allow_html=True)
 
 
 # =========================================================
@@ -572,4 +636,4 @@ if main_df is not None:
 else:
     st.error("Dashboard cannot be loaded. Please check data file.")
 
-#streamlit run team1.py
+#   streamlit run team1.py
