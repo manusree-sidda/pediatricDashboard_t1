@@ -191,6 +191,7 @@ def build_patient_data(patient_id, df):
         "procedure_times": {
             "cpb_time": get_patient_value(patient_row, "CPBTm", 0),
             "cross_clamp_time": get_patient_value(patient_row, "XClampTm", 0),
+            "dhca_time": get_patient_value(patient_row, "DHCATm", 0),
         },
         
         # --- NEW: Added procedure/anatomy details ---
@@ -431,7 +432,7 @@ def dashboard_app(data: dict):
                                 <span style="font-size:1.1rem;font-weight:600;">{surg_weight} kg</span>
                                 </div>
                             <div style="text-align:right;color:#555;font-size:0.9rem;white-space:nowrap;">
-                                <span style="margin-right:20px;">Weight Gain After Birth: <b>{gain_kg} kg</b></span>
+                                <span style="margin-right:20px;">Weight Gain After Surgery: <b>{gain_kg} kg</b></span>
                                 <span>Surgery: <b>{surg_date}</b></span>
                             </div>
                         </div>
@@ -521,7 +522,7 @@ def dashboard_app(data: dict):
                 <div style="display:flex; align-items:flex-start; gap: 8px; margin-top: 12px;">
                     {anatomy_icon_markdown()}
                     <div>
-                        <div style="color: #555; font-size: 0.9rem;">Cardiac Anatomy</div>
+                        <div style="color: #555; font-size: 0.9rem;">Cardiac Anatomy Notes</div>
                         <div style="font-weight: 600; font-size: 1.1rem; color: #111;">{proc_data['anatomy_notes']}</div>
                     </div>
                 </div>
@@ -542,6 +543,7 @@ def dashboard_app(data: dict):
         # --- CHANGED: Use real data from the dictionary ---
         cross_clamp_time = int(data["procedure_times"]["cross_clamp_time"])
         cpb_time = int(data["procedure_times"]["cpb_time"])
+        dhca_time = int(data["procedure_times"]["dhca_time"])
         # --- END CHANGE ---
         
         def risk_bg(val):
@@ -573,6 +575,7 @@ def dashboard_app(data: dict):
                 </div>""", unsafe_allow_html=True)
         styled_progress(cross_clamp_time, "Cross Clamp Duration")
         styled_progress(cpb_time, "CPB (Cardiopulmonary Bypass) Duration")
+        styled_progress(dhca_time, "DHCA Duration")
         st.markdown(f"""
             <div class="legend">
                 <div class="legend-item"><div class="legend-swatch" style="background:{RISK_COLORS['Low']['bg']};"></div>Low Risk</div>
